@@ -97,7 +97,7 @@ procs = [
   PythonProcess("updated", "selfdrive.updated", always_run, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", allow_uploads),
   PythonProcess("statsd", "selfdrive.statsd", allow_logging),
-
+  PythonProcess("c3_client", "selfdrive.c3_client", always_run),
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
