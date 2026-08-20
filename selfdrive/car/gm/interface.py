@@ -388,6 +388,15 @@ class CarInterface(CarInterfaceBase):
       #ret.wheelSpeedFactor = 1.05
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate == CAR.BUICK_VERANO:
+      ret.mass = 1320.  # 威朗 1.5T
+      ret.wheelbase = 2.70  # 2700mm
+      ret.steerRatio = 16.0  # guess, tune later
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerActuatorDelay = 0.2
+      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.CT6_CC:
       ret.wheelbase = 3.11
       ret.mass = 5198. * CV.LB_TO_KG

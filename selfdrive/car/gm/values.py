@@ -125,6 +125,8 @@ class CAR(StrEnum):
   # 昂科旗
   BABYENCLAVE = "BUICK BABY ENCLAVE 2020"
   BABYAVENIR = "BUICK BABY ENCLAVE AVENIR 2020"
+  # 威朗
+  BUICK_VERANO = "BUICK_2018_Verano"
 
 class Footnote(Enum):
   OBD_II = CarFootnote(
@@ -180,6 +182,8 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   # 昂科旗
   CAR.BABYENCLAVE: GMCarInfo("BUICK BABY ENCLAVE 2020"),
   CAR.BABYAVENIR: GMCarInfo("BUICK BABY ENCLAVE AVENIR 2020"),
+  # 威朗
+  CAR.BUICK_VERANO: GMCarInfo("BUICK 2018 Verano", "Adaptive Cruise Control (ACC) & LKAS"),
 }
 
 
@@ -297,12 +301,13 @@ DBC[CAR.VOLT_CC] = DBC[CAR.VOLT]
 DBC[CAR.XT4] = dbc_dict('gm_global_a_powertrain_sdgm', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
 DBC[CAR.BABYENCLAVE] = DBC[CAR.XT4]
 DBC[CAR.BABYAVENIR] = DBC[CAR.XT4]
+DBC[CAR.BUICK_VERANO] = DBC[CAR.XT4]
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV, CAR.VOLT_CC, CAR.BOLT_CC}
 CC_ONLY_CAR = {CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.SUBURBAN_CC, CAR.YUKON_CC, CAR.CT6_CC, CAR.TRAILBLAZER_CC}
 
 # We're integrated at the Safety Data Gateway Module on these cars
-SDGM_CAR = {CAR.XT4, CAR.BABYENCLAVE, CAR.BABYAVENIR}
+SDGM_CAR = {CAR.XT4, CAR.BABYENCLAVE, CAR.BABYAVENIR, CAR.BUICK_VERANO}
 
 # Slow acceleration cars
 SLOW_ACC = {CAR.SILVERADO}
