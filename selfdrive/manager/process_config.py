@@ -69,7 +69,7 @@ procs = [
 
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", drivermonitor, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], allow_logging),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], always_run),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], only_onroad),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], allow_logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
@@ -100,7 +100,7 @@ procs = [
   PythonProcess("c3_client", "selfdrive.c3_client", always_run),
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", always_run),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", only_onroad),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
 
   # Lqrtx processes
