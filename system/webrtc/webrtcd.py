@@ -201,6 +201,10 @@ async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
+  # filter services this fork does not publish (e.g. selfdriveState was renamed)
+  valid_services = set(messaging.SERVICE_LIST.keys())
+  body.bridge_services_out = [svc for svc in body.bridge_services_out if svc in valid_services]
+  body.bridge_services_in = [svc for svc in body.bridge_services_in if svc in valid_services]
 
   session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
   answer = await session.get_answer()
