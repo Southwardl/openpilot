@@ -230,7 +230,7 @@ async def on_shutdown(app: 'web.Application'):
 
 
 def webrtcd_thread(host: str, port: int, debug: bool):
-  logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
+  logging.basicConfig(level=logging.WARNING, handlers=[logging.StreamHandler()])
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
