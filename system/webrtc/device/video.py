@@ -41,4 +41,10 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     return packet
 
   def codec_preference(self) -> Optional[str]:
-    return "H264"
+    try:
+      import av
+      av.Codec("libx264", "w")
+      return "H264"
+    except Exception:
+      self.log_debug("libx264 not available, falling back to default (VP8)")
+      return None
