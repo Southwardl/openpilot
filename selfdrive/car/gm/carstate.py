@@ -203,7 +203,17 @@ class CarState(CarStateBase):
         ret.stockAeb = False
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
-        ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
+        # Chinese-market SDGM cars: the fork's compiled opendbc uses the Chinese
+        # DBC layout, where ACCCruiseState always decodes to 0 (even while the
+        # stock ACC is engaged). That would force nonAdaptive=True permanently,
+        # which raises wrongCruiseMode ("openpilot Unavailable / Adaptive Cruise
+        # Disabled") -> NO_ENTRY blocks OP from enabling -> OP's cancel logic
+        # then spams CANCEL on 0x1E1 and kills the stock ACC ~0.7s after engage.
+        # Chinese GM ACC is always adaptive, so report nonAdaptive=False here.
+        if self.CP.carFingerprint in SDGM_CAR:
+          ret.cruiseState.nonAdaptive = False
+        else:
+          ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
     if self.CP.carFingerprint in CC_ONLY_CAR:
       ret.accFaulted = False
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
