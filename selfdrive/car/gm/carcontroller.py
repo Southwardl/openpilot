@@ -120,7 +120,11 @@ class CarController:
         frogpilot_variables.smoother_lane_change = 1 #only 1 time
       self.apply_steer_last = apply_steer
       idx = self.lka_steering_cmd_counter % 4
-      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
+      # Verano: only TX 0x180 while latActive. When OP is disengaged, sending
+      # idle 0x180 at 100Hz on bus 0 makes the EPS see two LKAS command sources
+      # (the ASCM's forwarded commands + OP's idle stream) and refuse both.
+      if CC.latActive:
+        can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
 
     if self.CP.openpilotLongitudinalControl and not frogpilot_variables.CSLC:
       # Gas/regen, brakes, and UI commands - all at 25Hz
