@@ -280,7 +280,13 @@ static int gm_fwd_hook(int bus_num, int addr) {
     if (bus_num == 0) {
       // block PSCMStatus; forwarded through openpilot to hide an alert from the camera
       bool is_pscm_msg = (addr == 0x184);
-      if (!is_pscm_msg) {
+      // Also block LKAS commands (0x180) from reaching the camera: on the
+      // Chinese Verano the camera refuses to engage its own LKAS whenever it
+      // sees external LKAS commands on its bus (OP's steering commands are
+      // forwarded here). Without the camera's LKAS engaged, the EPS applies
+      // no torque at any speed. Blocking the forward keeps the camera healthy.
+      bool is_lkas_msg = (addr == 0x180);
+      if (!is_pscm_msg && !is_lkas_msg) {
         bus_fwd = 2;
       }
     }
