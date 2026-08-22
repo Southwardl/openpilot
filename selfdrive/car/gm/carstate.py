@@ -144,7 +144,16 @@ class CarState(CarStateBase):
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
-    ret.steerFaultTemporary = self.lkas_status == 2
+    if self.CP.carFingerprint in SDGM_CAR:
+      # Chinese-market EPS reports status=2 ("Temp. Limited" per US DBC) during
+      # normal LKAS operation: hard steering against driver input, and random
+      # flips while coasting on the road. openpilot treated it as a temporary
+      # fault and cut steering + soft-disabled ("TAKE CONTROL IMMEDIATELY /
+      # Steering temporarily unavailable"). Only status 3 (Failed) is a real
+      # fault here.
+      ret.steerFaultTemporary = False
+    else:
+      ret.steerFaultTemporary = self.lkas_status == 2
     ret.steerFaultPermanent = self.lkas_status == 3
 
     hazardLights = 0
