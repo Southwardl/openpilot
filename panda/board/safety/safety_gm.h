@@ -101,6 +101,14 @@ bool gm_cc_long = false;
 bool gm_skip_relay_check = false;
 bool gm_force_ascm = false;
 
+// Verano LKAS relay: the EPS only applies torque from the EOCM1's command
+// stream. While OP is controlling (controls_allowed), panda blocks the
+// EOCM1's 0x180 from reaching the EPS and instead re-packs OP's 0x180 with
+// the EOCM1's counter sequence, so the EPS sees a continuous EOCM1 stream
+// whose torque comes from openpilot.
+bool gm_lkas_relay_enabled = false;
+uint8_t gm_eocm_lkas_counter = 0U;
+
 static void handle_gm_wheel_buttons(const CANPacket_t *to_push) {
   int button = (GET_BYTE(to_push, 5) & 0x70U) >> 4;
 
@@ -120,6 +128,15 @@ static void handle_gm_wheel_buttons(const CANPacket_t *to_push) {
 }
 
 static void gm_rx_hook(const CANPacket_t *to_push) {
+  // Verano LKAS relay state: active while OP controls; track the EOCM1's
+  // 0x180 counter so relay re-packs keep the stream continuous.
+  if (gm_hw == GM_SDGM) {
+    gm_lkas_relay_enabled = controls_allowed;
+    if ((GET_BUS(to_push) == 2U) && (GET_ADDR(to_push) == 0x180)) {
+      gm_eocm_lkas_counter = (GET_BYTE(to_push, 0) >> 4U) & 0x3U;
+    }
+  }
+
   if ((GET_BUS(to_push) == 2U) && (GET_ADDR(to_push) == 0x1E1) && (gm_hw == GM_SDGM)) {
     // SDGM buttons are on bus 2
     handle_gm_wheel_buttons(to_push);
@@ -292,10 +309,13 @@ static int gm_fwd_hook(int bus_num, int addr) {
     }
 
     if (bus_num == 2) {
-      // block lkas message and acc messages if gm_cam_long, forward all others
+      // Verano: while OP controls (relay mode), block the EOCM1's LKAS
+      // commands so the EPS sees only panda's re-packed stream. Otherwise
+      // forward 0x180 so stock LKAS works through the panda bridge.
       bool is_lkas_msg = (addr == 0x180);
+      bool block_msg = is_lkas_msg && gm_lkas_relay_enabled;
       bool is_acc_msg = (addr == 0x315) || (addr == 0x2CB) || (addr == 0x370);
-      bool block_msg = is_lkas_msg || (is_acc_msg && gm_cam_long);
+      block_msg = block_msg || (is_acc_msg && gm_cam_long);
       if (!block_msg) {
         bus_fwd = 0;
       }

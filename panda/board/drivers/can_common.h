@@ -262,7 +262,26 @@ bool can_check_checksum(CANPacket_t *packet) {
   return (calculate_checksum((uint8_t *) packet, CANPACKET_HEAD_SIZE + GET_LEN(packet)) == 0U);
 }
 
+// Verano LKAS relay state (defined in safety_gm.h)
+extern bool gm_lkas_relay_enabled;
+extern uint8_t gm_eocm_lkas_counter;
+int to_signed(int d, int bits);
+
 void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
+  // Verano LKAS relay: while OP controls, re-pack OP's 0x180 with the
+  // EOCM1's counter sequence so the EPS keeps accepting the command stream.
+  if (gm_lkas_relay_enabled && (GET_ADDR(to_push) == 0x180U) && (bus_number == 0U) && !skip_tx_hook) {
+    int torque = to_signed(((GET_BYTE(to_push, 0) & 0x7U) << 8) + GET_BYTE(to_push, 1), 11);
+    uint8_t active = GET_BIT(to_push, 3U) ? 1U : 0U;
+    uint8_t idx = gm_eocm_lkas_counter;
+    int checksum = 0x1000 - (active << 11) - (torque & 0x7FF) - idx;
+    to_push->data[0] = (uint8_t)((idx << 4) | (active << 3) | ((torque >> 8) & 0x7U));
+    to_push->data[1] = (uint8_t)(torque & 0xFFU);
+    to_push->data[2] = (uint8_t)((checksum >> 8) & 0xFFU);
+    to_push->data[3] = (uint8_t)(checksum & 0xFFU);
+    gm_eocm_lkas_counter = (uint8_t)((gm_eocm_lkas_counter + 1U) & 0x3U);
+  }
+
   if (skip_tx_hook || safety_tx_hook(to_push) != 0) {
     if (bus_number < PANDA_BUS_CNT) {
       // add CAN packet to send queue
