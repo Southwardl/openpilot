@@ -158,7 +158,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = True
       ret.radarUnavailable = True
       ret.minEnableSpeed = -1.  # engage speed is decided by ASCM
-      ret.minSteerSpeed = 30 * CV.MPH_TO_MS
+      ret.minSteerSpeed = 10 * CV.KPH_TO_MS  # LKA enable speed lowered to 10 km/h (was 30 mph)
       # Red Panda Config BUS 0/1/2/3 -> 4/5/6/7
       # ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_GM_HW_SDGM
       # Internal Panda Config BUS 0/1/2/3

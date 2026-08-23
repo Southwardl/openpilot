@@ -125,7 +125,11 @@ class WebRTCBaseStream(abc.ABC):
   def _on_incoming_track(self, track: aiortc.MediaStreamTrack):
     self._log_debug("got track: %s %s", track.kind, track.id)
     if track.kind == "video":
-      camera_type, _ = parse_video_track_id(track.id)
+      try:
+        camera_type, _ = parse_video_track_id(track.id)
+      except ValueError:
+        self.logger.warning("ignoring incoming track with non-comma id: %s", track.id)
+        return
       if camera_type in self.expected_incoming_camera_types:
         self.incoming_camera_tracks[camera_type] = track
     elif track.kind == "audio":

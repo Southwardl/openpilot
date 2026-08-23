@@ -119,8 +119,11 @@ class StreamSession:
       track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
       builder.add_video_stream(cam, track)
     if config.expected_audio_track:
-      track = AudioInputStreamTrack() if not debug_mode else AudioStreamTrack()
-      builder.add_audio_stream(track)
+      try:
+        track = AudioInputStreamTrack() if not debug_mode else AudioStreamTrack()
+        builder.add_audio_stream(track)
+      except OSError:
+        pass
     if config.incoming_audio_track:
       self.audio_output_cls = AudioOutputSpeaker if not debug_mode else MediaBlackhole
       builder.offer_to_receive_audio_stream()
@@ -198,6 +201,10 @@ async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
+  # filter services this fork does not publish (e.g. selfdriveState was renamed)
+  valid_services = set(messaging.SERVICE_LIST.keys())
+  body.bridge_services_out = [svc for svc in body.bridge_services_out if svc in valid_services]
+  body.bridge_services_in = [svc for svc in body.bridge_services_in if svc in valid_services]
 
   session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
   answer = await session.get_answer()
@@ -223,7 +230,7 @@ async def on_shutdown(app: 'web.Application'):
 
 
 def webrtcd_thread(host: str, port: int, debug: bool):
-  logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
+  logging.basicConfig(level=logging.WARNING, handlers=[logging.StreamHandler()])
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
