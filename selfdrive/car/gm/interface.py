@@ -475,6 +475,14 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, frogpilot_variables, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
+    if self.CP.carFingerprint in SDGM_CAR:
+      # EPS status=2 (Temp Limited) is normal on Chinese SDGM cars. We keep
+      # steerFaultTemporary=True (stops lateral output so EPS recovers) but
+      # downgrade the SOFT_DISABLE event - otherwise controlsd soft-disables
+      # and the CANCEL spam kills the stock ACC right after SET (the bug that
+      # 119b1e6 was built to fix).
+      if EventName.steerTempUnavailable in events.events:
+        events.events.remove(EventName.steerTempUnavailable)
     if not self.CP.pcmCruise:
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
         events.add(EventName.buttonEnable)

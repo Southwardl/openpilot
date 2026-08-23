@@ -144,16 +144,14 @@ class CarState(CarStateBase):
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
-    if self.CP.carFingerprint in SDGM_CAR:
-      # Chinese-market EPS reports status=2 ("Temp. Limited" per US DBC) during
-      # normal LKAS operation: hard steering against driver input, and random
-      # flips while coasting on the road. openpilot treated it as a temporary
-      # fault and cut steering + soft-disabled ("TAKE CONTROL IMMEDIATELY /
-      # Steering temporarily unavailable"). Only status 3 (Failed) is a real
-      # fault here.
-      ret.steerFaultTemporary = False
-    else:
-      ret.steerFaultTemporary = self.lkas_status == 2
+    # Chinese-market EPS reports status=2 ("Temp. Limited") intermittently -
+    # it is NORMAL behavior (driver input / speed protection), NOT a fault.
+    # We still surface it as steerFaultTemporary so the lateral controller
+    # stops outputting commands while the EPS is limited (otherwise OP keeps
+    # fighting the EPS with full-scale torque and it never recovers -> no
+    # steering at all). The SOFT_DISABLE side-effect is downgraded in
+    # gm/interface.py so ACC is not CANCEL-killed (that was 119b1e6's goal).
+    ret.steerFaultTemporary = self.lkas_status == 2
     ret.steerFaultPermanent = self.lkas_status == 3
 
     hazardLights = 0
