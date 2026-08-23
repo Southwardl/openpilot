@@ -128,10 +128,9 @@ static void handle_gm_wheel_buttons(const CANPacket_t *to_push) {
 }
 
 static void gm_rx_hook(const CANPacket_t *to_push) {
-  // Verano LKAS relay state: active while OP controls; track the EOCM1's
-  // 0x180 counter so relay re-packs keep the stream continuous.
+  // Verano LKAS relay: track the EOCM1's 0x180 counter so relay re-packs
+  // keep the stream continuous (relay flag itself is set in gm_tx_hook).
   if (gm_hw == GM_SDGM) {
-    gm_lkas_relay_enabled = controls_allowed;
     if ((GET_BUS(to_push) == 2U) && (GET_ADDR(to_push) == 0x180)) {
       gm_eocm_lkas_counter = (GET_BYTE(to_push, 0) >> 4U) & 0x3U;
     }
@@ -228,6 +227,12 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
 static bool gm_tx_hook(const CANPacket_t *to_send) {
   bool tx = true;
   int addr = GET_ADDR(to_send);
+
+  // Verano LKAS relay: engage whenever OP commands active steering (or
+  // controls_allowed), so re-packing tracks the EOCM1 counter continuously.
+  if ((addr == 0x180) && (gm_hw == GM_SDGM)) {
+    gm_lkas_relay_enabled = (GET_BIT(to_send, 3U) != 0U) || controls_allowed;
+  }
 
   // BRAKE: safety check
   if (addr == 0x315) {
