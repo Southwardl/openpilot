@@ -30,7 +30,7 @@ from openpilot.selfdrive.car.car_helpers import get_car, get_startup_event, get_
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, clip_curvature
-from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.controls.lib.events import Events, ET, AlertStatus, AlertSize
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
@@ -1212,6 +1212,34 @@ class Controls:
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
       controlsState.lateralControlState.torqueState = lac_log
+
+    # ===== Torque realtime display (yellow text on onroad UI) =====
+    # Always show current steering torque output via alertText2 with
+    # AlertStatus.frogpilot (rendered yellow by the mr-one UI). Real
+    # alerts are kept, torque info is appended to alertText2.
+    try:
+      op_steer = float(CC.actuators.steer)
+      eps_delivered = float(getattr(CS, 'steeringTorqueEps', 0.0))
+      eps_status = getattr(self.CI.CS, 'lkas_status', -1)
+      v_ego_kph = float(CS.vEgo) * 3.6
+      lat_active = bool(CC.latActive)
+      status_names = {0: "INACT", 1: "ACTIVE", 2: "LIMITED", 3: "FAIL"}
+      eps_str = status_names.get(int(eps_status), str(eps_status))
+      torque_text = f"OP: {op_steer:+.2f} | EPS: {eps_delivered:+.2f}Nm [{eps_str}] | {v_ego_kph:.0f}km/h{' | LKA' if lat_active else ''}"
+      if current_alert:
+        # append torque info to existing alert text (line 2)
+        if current_alert.alert_text_2:
+          controlsState.alertText2 = f"{current_alert.alert_text_2} | {torque_text}"
+        else:
+          controlsState.alertText2 = torque_text
+      else:
+        # no alert: synthesize a small yellow display
+        controlsState.alertText1 = "Torque"
+        controlsState.alertText2 = torque_text
+        controlsState.alertStatus = AlertStatus.frogpilot
+        controlsState.alertSize = AlertSize.small
+    except Exception:
+      pass
 
     self.pm.send('controlsState', dat)
 
