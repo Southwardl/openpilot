@@ -418,7 +418,15 @@ def main() -> None:
 
   if params.get_bool("DisableUpdates"):
     cloudlog.warning("updates are disabled by the DisableUpdates param")
-    exit(0)
+    # Keep the process alive (idle) so managerState doesn't report it as
+    # shouldBeRunning-but-dead, which raises the "Process Not Running:
+    # updated" NO_ENTRY alert and blocks OP from enabling. Ignore update
+    # signals since updates are disabled.
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    signal.signal(signal.SIGUSR1, signal.SIG_IGN)
+    signal.signal(signal.SIGUSR2, signal.SIG_IGN)
+    while True:
+      time.sleep(60)
 
   with open(LOCK_FILE, 'w') as ov_lock_fd:
     try:
