@@ -1215,8 +1215,9 @@ class Controls:
 
     # ===== Torque realtime display (yellow text on onroad UI) =====
     # Always show current steering torque output via alertText2 with
-    # AlertStatus.frogpilot (rendered yellow by the mr-one UI). Real
-    # alerts are kept, torque info is appended to alertText2.
+    # AlertStatus.userPrompt (rendered YELLOW by the mr-one UI; frogpilot
+    # status is green per cereal/log.capnp). Real alerts are kept, torque
+    # info is appended to alertText2.
     try:
       op_steer = float(CC.actuators.steer)
       eps_delivered = float(getattr(CS, 'steeringTorqueEps', 0.0))
@@ -1236,7 +1237,7 @@ class Controls:
         # no alert: synthesize a small yellow display
         controlsState.alertText1 = "Torque"
         controlsState.alertText2 = torque_text
-        controlsState.alertStatus = AlertStatus.frogpilot
+        controlsState.alertStatus = AlertStatus.userPrompt
         controlsState.alertSize = AlertSize.small
     except Exception:
       pass
