@@ -66,9 +66,12 @@ def create_pscm_status(packer, bus, pscm_status):
     "RollingCounter",
     "PSCMStatusChecksum",
   ]}
-  checksum_mod = int(1 - values["HandsOffSWlDetectionStatus"]) << 5
-  values["HandsOffSWlDetectionStatus"] = 1
-  values["PSCMStatusChecksum"] += checksum_mod
+  # NOTE(Verano): the fork's old code forced HandsOffSWlDetectionStatus=1 and
+  # patched the checksum by (1-hands)<<5, which was calibrated for the US DBC
+  # layout. With the Chinese-layout compiled packer the checksum field ends up
+  # wrong by 0x20, so the camera rejects the forwarded PSCMStatus and never
+  # engages LKAS (no steering at any speed). Forward a byte-faithful copy
+  # instead (parse->repack round-trips exactly on the Chinese DBC).
   return packer.make_can_msg("PSCMStatus", bus, values)
 
 
